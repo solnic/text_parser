@@ -54,6 +54,61 @@ TextParser.get(result, URL) # => [%URL{...}]
 TextParser.get(result, Tag) # => [%Tag{...}]
 ```
 
+### Custom Tokens
+
+You can create custom token types to extract different patterns from text. Here's an example of a token that extracts ISO 8601 dates:
+
+```elixir
+defmodule MyParser.Tokens.Date do
+  use TextParser.Token,
+    # Match YYYY-MM-DD format, requiring space or start of string before the date
+    pattern: ~r/(?:^|\s)(\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01]))/,
+    trim_chars: [",", ".", "!", "?"]
+
+  @impl true
+  def is_valid?(date_text) when is_binary(date_text) do
+    case Date.from_iso8601(date_text) do
+      {:ok, _date} -> true
+      _ -> false
+    end
+  end
+
+  def is_valid?(_), do: false
+end
+
+# Usage
+text = "Meeting on 2024-01-15, conference on 2024-02-30, party on 2024-12-31!"
+result = TextParser.parse(text, extract: [MyParser.Tokens.Date])
+
+dates = TextParser.get(result, MyParser.Tokens.Date)
+# => [
+#   %MyParser.Tokens.Date{value: "2024-01-15", position: {11, 21}},
+#   %MyParser.Tokens.Date{value: "2024-12-31", position: {47, 57}}
+# ]
+# Note: 2024-02-30 is filtered out as it's not a valid date
+```
+
+Custom tokens require:
+1. A regex `pattern` that captures the token in the first capture group
+2. Optional `trim_chars` to remove trailing punctuation
+3. An `is_valid?/1` function that validates the extracted value
+
+You can mix custom tokens with built-in ones:
+
+```elixir
+alias TextParser.Tokens.{URL, Tag}
+alias MyParser.Tokens.Date
+
+result = TextParser.parse(
+  "Meeting on 2024-01-15 at https://example.com #elixir",
+  extract: [URL, Tag, Date]
+)
+
+TextParser.get(result, Date)  # => [%Date{value: "2024-01-15", position: {11, 21}}]
+TextParser.get(result, URL)   # => [%URL{value: "https://example.com", position: {25, 44}}]
+TextParser.get(result, Tag)   # => [%Tag{value: "#elixir", position: {45, 52}}]
+```
+
 ### Custom Parsers
 
 You can create custom parsers with specific validation rules:
