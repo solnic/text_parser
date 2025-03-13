@@ -5,6 +5,7 @@ defmodule TextParser do
   @doc """
   Parses the given text and returns a Text struct with extracted URLs, tags, and mentions.
   """
+  @spec parse(String.t()) :: Text.t()
   def parse(text) when is_binary(text) do
     text = :unicode.characters_to_binary(text)
     urls = URL.extract(text)
