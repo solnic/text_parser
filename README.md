@@ -4,6 +4,8 @@
 
 TextParser is an Elixir library for extracting and validating structured tokens from text, such as URLs, hashtags, and mentions. It provides built-in token types and allows you to define custom parsers with specific validation rules.
 
+This library was extracted from [justcrosspost.app](https://justcrosspost.app) where processing tags, mentions and URLs for Bluesky is [kinda tricky](https://docs.bsky.app/docs/advanced-guides/post-richtext).
+
 ## Installation
 
 Add `text_parser` to your list of dependencies in `mix.exs`:
