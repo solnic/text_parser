@@ -7,22 +7,19 @@ defmodule TextParserTest do
 
   # Add custom token module for testing
   defmodule CustomToken do
-    use TextParser.Token
+    use TextParser.Token,
+      pattern: ~r/(?:^|\s)(\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01]))/,
+      trim_chars: [",", ".", "!", "?"]
 
     @impl true
-    def extract(_text) do
-      [
-        %__MODULE__{
-          value: "custom",
-          position: {0, 6}
-        }
-      ]
+    def is_valid?(date_text) when is_binary(date_text) do
+      case Date.from_iso8601(date_text) do
+        {:ok, _date} -> true
+        _ -> false
+      end
     end
 
-    @impl true
-    def is_valid?(_token) do
-      true
-    end
+    def is_valid?(_), do: false
   end
 
   describe "parse/2" do
@@ -66,25 +63,39 @@ defmodule TextParserTest do
     end
 
     test "supports custom token extractors" do
-      text = "Check out https://example.com #elixir @user"
+      text = "Meeting on 2024-01-15, conference on 2024-02-30, party on 2024-12-31!"
 
       result = TextParser.parse(text, extract: [CustomToken])
-      custom_tokens = TextParser.get(result, CustomToken)
-      assert length(custom_tokens) == 1
+      dates = TextParser.get(result, CustomToken)
+
+      # 2024-02-30 is invalid date and should be filtered out
+      assert length(dates) == 2
+
+      [date1, date2] = dates
+      assert date1.value == "2024-01-15"
+      assert date1.position == {11, 21}
+      assert date2.value == "2024-12-31"
+      assert date2.position == {58, 68}
+
+      # Other token types should not be present
       assert TextParser.get(result, URL) == []
       assert TextParser.get(result, Tag) == []
       assert TextParser.get(result, Mention) == []
     end
 
     test "supports mixing multiple extractors" do
-      text = "Check out https://example.com #elixir @user"
+      text = "Meeting on 2024-01-15 at https://example.com #elixir @user"
 
-      result = TextParser.parse(text, extract: [URL, CustomToken, Mention])
+      result = TextParser.parse(text, extract: [URL, CustomToken, Tag])
 
       assert length(TextParser.get(result, URL)) == 1
-      assert TextParser.get(result, Tag) == []
-      assert length(TextParser.get(result, Mention)) == 1
       assert length(TextParser.get(result, CustomToken)) == 1
+      assert length(TextParser.get(result, Tag)) == 1
+      assert TextParser.get(result, Mention) == []
+
+      [date] = TextParser.get(result, CustomToken)
+      assert date.value == "2024-01-15"
+      assert date.position == {11, 21}
     end
 
     test "returns tokens sorted by position" do
