@@ -18,6 +18,11 @@ defmodule TextParserTest do
         }
       ]
     end
+
+    @impl true
+    def is_valid?(_token) do
+      true
+    end
   end
 
   describe "parse/2" do
