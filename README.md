@@ -99,6 +99,14 @@ url.value     # => "https://elixir-lang.org"
 url.position  # => {6, 29} (start and end byte positions)
 ```
 
+The `position` tuple uses a range format where:
+- The start position is inclusive (the first byte of the token)
+- The end position is exclusive (one byte past the last byte of the token)
+
+For example, with `position: {6, 29}`, the token starts at byte 6 and ends at byte 28. This format makes it easy to:
+- Calculate token length: `end - start` (29 - 6 = 23 bytes)
+- Extract the token from text: `binary_part(text, start, end - start)`
+
 ## Documentation
 
 The full documentation can be found at [https://hexdocs.pm/text_parser](https://hexdocs.pm/text_parser).
