@@ -26,30 +26,30 @@ defmodule TextParserTest do
 
       # Extract only URLs
       result = TextParser.parse(text, extract: [URL])
-      urls = Enum.filter(result.tokens, &match?(%URL{}, &1))
+      urls = TextParser.get(result, URL)
       assert length(urls) == 1
-      assert Enum.filter(result.tokens, &match?(%Tag{}, &1)) == []
-      assert Enum.filter(result.tokens, &match?(%Mention{}, &1)) == []
+      assert TextParser.get(result, Tag) == []
+      assert TextParser.get(result, Mention) == []
 
       # Extract only tags
       result = TextParser.parse(text, extract: [Tag])
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 1
-      assert Enum.filter(result.tokens, &match?(%URL{}, &1)) == []
-      assert Enum.filter(result.tokens, &match?(%Mention{}, &1)) == []
+      assert TextParser.get(result, URL) == []
+      assert TextParser.get(result, Mention) == []
 
       # Extract only mentions
       result = TextParser.parse(text, extract: [Mention])
-      mentions = Enum.filter(result.tokens, &match?(%Mention{}, &1))
+      mentions = TextParser.get(result, Mention)
       assert length(mentions) == 1
-      assert Enum.filter(result.tokens, &match?(%URL{}, &1)) == []
-      assert Enum.filter(result.tokens, &match?(%Tag{}, &1)) == []
+      assert TextParser.get(result, URL) == []
+      assert TextParser.get(result, Tag) == []
 
       # Extract tags and mentions
       result = TextParser.parse(text, extract: [Tag, Mention])
-      assert Enum.filter(result.tokens, &match?(%URL{}, &1)) == []
-      assert length(Enum.filter(result.tokens, &match?(%Tag{}, &1))) == 1
-      assert length(Enum.filter(result.tokens, &match?(%Mention{}, &1))) == 1
+      assert TextParser.get(result, URL) == []
+      assert length(TextParser.get(result, Tag)) == 1
+      assert length(TextParser.get(result, Mention)) == 1
     end
 
     test "returns empty struct when no extractors provided" do
@@ -64,11 +64,11 @@ defmodule TextParserTest do
       text = "Check out https://example.com #elixir @user"
 
       result = TextParser.parse(text, extract: [CustomToken])
-      custom_tokens = Enum.filter(result.tokens, &match?(%CustomToken{}, &1))
+      custom_tokens = TextParser.get(result, CustomToken)
       assert length(custom_tokens) == 1
-      assert Enum.filter(result.tokens, &match?(%URL{}, &1)) == []
-      assert Enum.filter(result.tokens, &match?(%Tag{}, &1)) == []
-      assert Enum.filter(result.tokens, &match?(%Mention{}, &1)) == []
+      assert TextParser.get(result, URL) == []
+      assert TextParser.get(result, Tag) == []
+      assert TextParser.get(result, Mention) == []
     end
 
     test "supports mixing multiple extractors" do
@@ -76,10 +76,10 @@ defmodule TextParserTest do
 
       result = TextParser.parse(text, extract: [URL, CustomToken, Mention])
 
-      assert length(Enum.filter(result.tokens, &match?(%URL{}, &1))) == 1
-      assert Enum.filter(result.tokens, &match?(%Tag{}, &1)) == []
-      assert length(Enum.filter(result.tokens, &match?(%Mention{}, &1))) == 1
-      assert length(Enum.filter(result.tokens, &match?(%CustomToken{}, &1))) == 1
+      assert length(TextParser.get(result, URL)) == 1
+      assert TextParser.get(result, Tag) == []
+      assert length(TextParser.get(result, Mention)) == 1
+      assert length(TextParser.get(result, CustomToken)) == 1
     end
 
     test "returns tokens sorted by position" do
@@ -96,16 +96,16 @@ defmodule TextParserTest do
       text = "Hey @user check https://example.com and #elixir"
       result = TextParser.parse(text)
 
-      assert length(Enum.filter(result.tokens, &match?(%URL{}, &1))) == 1
-      assert length(Enum.filter(result.tokens, &match?(%Tag{}, &1))) == 1
-      assert length(Enum.filter(result.tokens, &match?(%Mention{}, &1))) == 1
+      assert length(TextParser.get(result, URL)) == 1
+      assert length(TextParser.get(result, Tag)) == 1
+      assert length(TextParser.get(result, Mention)) == 1
     end
 
     test "extracts valid URLs from text" do
       text = "Check out https://example.com for more info"
       result = TextParser.parse(text)
 
-      urls = Enum.filter(result.tokens, &match?(%URL{}, &1))
+      urls = TextParser.get(result, URL)
       assert length(urls) == 1
       [url] = urls
       assert url.value == "https://example.com"
@@ -116,7 +116,7 @@ defmodule TextParserTest do
       text = "Check these: https://example.com, https://test.com!"
       result = TextParser.parse(text)
 
-      urls = Enum.filter(result.tokens, &match?(%URL{}, &1))
+      urls = TextParser.get(result, URL)
       assert length(urls) == 2
       [url1, url2] = urls
       assert url1.value == "https://example.com"
@@ -129,7 +129,7 @@ defmodule TextParserTest do
       text = "Cool link! 🔥 https://example.com"
       result = TextParser.parse(text)
 
-      urls = Enum.filter(result.tokens, &match?(%URL{}, &1))
+      urls = TextParser.get(result, URL)
       assert length(urls) == 1
       [url] = urls
       assert url.value == "https://example.com"
@@ -140,15 +140,14 @@ defmodule TextParserTest do
       text = "This is not...a.url and this.is.not..either and foo...bar is not"
       result = TextParser.parse(text)
 
-      urls = Enum.filter(result.tokens, &match?(%URL{}, &1))
-      assert urls == []
+      assert TextParser.get(result, URL) == []
     end
 
     test "extracts valid tags from text" do
       text = "Check out #elixir and #phoenix for more info"
       result = TextParser.parse(text)
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 2
       [tag1, tag2] = tags
       assert tag1.value == "#elixir"
@@ -161,7 +160,7 @@ defmodule TextParserTest do
       text = "Using #elixir_lang and #phoenix2 framework"
       result = TextParser.parse(text)
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 2
       [tag1, tag2] = tags
       assert tag1.value == "#elixir_lang"
@@ -174,14 +173,14 @@ defmodule TextParserTest do
       text = "Invalid tags: #123 #. #! ## #"
       result = TextParser.parse(text)
 
-      assert Enum.filter(result.tokens, &match?(%Tag{}, &1)) == []
+      assert TextParser.get(result, Tag) == []
     end
 
     test "allows tags with digits if they contain letters" do
       text = "Valid tags: #123foo #foo123 #123-abc"
       result = TextParser.parse(text)
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 1
       [tag] = tags
       assert tag.value == "#foo123"
@@ -192,8 +191,8 @@ defmodule TextParserTest do
       text = "Check out https://elixir-lang.org #elixir #programming"
       result = TextParser.parse(text)
 
-      urls = Enum.filter(result.tokens, &match?(%URL{}, &1))
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      urls = TextParser.get(result, URL)
+      tags = TextParser.get(result, Tag)
 
       assert length(urls) == 1
       assert length(tags) == 2
@@ -213,19 +212,18 @@ defmodule TextParserTest do
       text = "Cool tag! 🔥 #elixir"
       result = TextParser.parse(text)
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 1
       [tag] = tags
       assert tag.value == "#elixir"
       assert tag.position == {15, 22}
     end
 
-    # Additional tests from bsky_test.exs scenarios
     test "handles multiple tags with exact byte positions" do
       text = "Check out #awesome #coding"
       result = TextParser.parse(text)
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 2
       [tag1, tag2] = tags
       assert tag1.value == "#awesome"
@@ -238,13 +236,13 @@ defmodule TextParserTest do
       text = "Hey @friend.bsky.handle check https://example.com #awesome"
       result = TextParser.parse(text)
 
-      urls = Enum.filter(result.tokens, &match?(%URL{}, &1))
+      urls = TextParser.get(result, URL)
       assert length(urls) == 1
       [url] = urls
       assert url.value == "https://example.com"
       assert url.position == {30, 49}
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 1
       [tag] = tags
       assert tag.value == "#awesome"
@@ -255,7 +253,7 @@ defmodule TextParserTest do
       text = "Check these #awesome #coding"
       result = TextParser.parse(text)
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 2
       [tag1, tag2] = tags
       assert tag1.value == "#awesome"
@@ -268,7 +266,7 @@ defmodule TextParserTest do
       text = "Love #elixir! #phoenix, #programming."
       result = TextParser.parse(text)
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 3
       [tag1, tag2, tag3] = tags
       assert tag1.value == "#elixir"
@@ -283,7 +281,7 @@ defmodule TextParserTest do
       text = "Cool! #elixir 🚀 #phoenix 🔥 #programming"
       result = TextParser.parse(text)
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 3
       [tag1, tag2, tag3] = tags
       assert tag1.value == "#elixir"
@@ -298,13 +296,13 @@ defmodule TextParserTest do
       text = "🌟 Check https://elixir-lang.org #elixir_lang 🚀 #phoenix #programming!"
       result = TextParser.parse(text)
 
-      urls = Enum.filter(result.tokens, &match?(%URL{}, &1))
+      urls = TextParser.get(result, URL)
       assert length(urls) == 1
       [url] = urls
       assert url.value == "https://elixir-lang.org"
       assert url.position == {11, 34}
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 3
       [tag1, tag2, tag3] = tags
       assert tag1.value == "#elixir_lang"
@@ -320,7 +318,7 @@ defmodule TextParserTest do
       result = TextParser.parse(text)
 
       # #123goo is invalid - first char after # is digit
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 3
       [tag1, tag2, tag3] = tags
 
@@ -340,7 +338,7 @@ defmodule TextParserTest do
       text = "How about #hello🔥 #world!"
       result = TextParser.parse(text)
 
-      tags = Enum.filter(result.tokens, &match?(%Tag{}, &1))
+      tags = TextParser.get(result, Tag)
       assert length(tags) == 2
       [tag1, tag2] = tags
 
@@ -357,14 +355,14 @@ defmodule TextParserTest do
       text = "This tag is too long: #{long_tag}"
       result = TextParser.parse(text)
 
-      assert Enum.filter(result.tokens, &match?(%Tag{}, &1)) == []
+      assert TextParser.get(result, Tag) == []
     end
 
     test "extracts valid mentions from text" do
       text = "Hey @user and @other.bsky.social for more info"
       result = TextParser.parse(text)
 
-      mentions = Enum.filter(result.tokens, &match?(%Mention{}, &1))
+      mentions = TextParser.get(result, Mention)
       assert length(mentions) == 2
       [mention1, mention2] = mentions
       assert mention1.value == "@user"
@@ -377,7 +375,7 @@ defmodule TextParserTest do
       text = "Hey @user! @other, and @third."
       result = TextParser.parse(text)
 
-      mentions = Enum.filter(result.tokens, &match?(%Mention{}, &1))
+      mentions = TextParser.get(result, Mention)
       assert length(mentions) == 3
       [mention1, mention2, mention3] = mentions
       assert mention1.value == "@user"
@@ -392,7 +390,7 @@ defmodule TextParserTest do
       text = "Hey @user🔥 and @other🚀!"
       result = TextParser.parse(text)
 
-      mentions = Enum.filter(result.tokens, &match?(%Mention{}, &1))
+      mentions = TextParser.get(result, Mention)
       assert length(mentions) == 2
       [mention1, mention2] = mentions
       assert mention1.value == "@user"
@@ -405,14 +403,14 @@ defmodule TextParserTest do
       text = "Invalid mentions: @ @. @! @@ @"
       result = TextParser.parse(text)
 
-      assert Enum.filter(result.tokens, &match?(%Mention{}, &1)) == []
+      assert TextParser.get(result, Mention) == []
     end
 
     test "handles mentions with dots and hyphens" do
       text = "Valid mentions: @user.name @other-handle @third_name"
       result = TextParser.parse(text)
 
-      mentions = Enum.filter(result.tokens, &match?(%Mention{}, &1))
+      mentions = TextParser.get(result, Mention)
       assert length(mentions) == 3
       [mention1, mention2, mention3] = mentions
       assert mention1.value == "@user.name"
@@ -427,13 +425,13 @@ defmodule TextParserTest do
       text = "Hey @solnic.dev and https://example.com"
       result = TextParser.parse(text)
 
-      urls = Enum.filter(result.tokens, &match?(%URL{}, &1))
+      urls = TextParser.get(result, URL)
       assert length(urls) == 1
       [url] = urls
       assert url.value == "https://example.com"
       assert url.position == {20, 39}
 
-      mentions = Enum.filter(result.tokens, &match?(%Mention{}, &1))
+      mentions = TextParser.get(result, Mention)
       assert length(mentions) == 1
       [mention] = mentions
       assert mention.value == "@solnic.dev"

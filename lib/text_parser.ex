@@ -53,4 +53,18 @@ defmodule TextParser do
   def parse(text) do
     parse(text, extract: [URL, Tag, Mention])
   end
+
+  @doc """
+  Returns tokens of the specified type from a Text struct.
+
+  ## Examples
+
+      iex> text = TextParser.parse("Check out https://example.com #elixir")
+      iex> TextParser.get(text, URL)
+      [%TextParser.Tokens.URL{value: "https://example.com", position: {10, 29}}]
+  """
+  @spec get(Text.t(), module()) :: [struct()]
+  def get(%Text{} = text, token_module) do
+    Enum.filter(text.tokens, &match?(^token_module, &1.__struct__))
+  end
 end
