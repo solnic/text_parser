@@ -1,15 +1,12 @@
 defmodule TextParser.Tokens.URL do
-  defstruct [:value, :position]
+  use TextParser.Token,
+    pattern: ~r/(?:^|\s)((?!@)(?:https?:\/\/)?[^\s]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/ui,
+    trim_chars: [".", ",", ";", "!", "?", ")"]
 
-  @type t :: %__MODULE__{
-          value: String.t(),
-          position: {non_neg_integer(), non_neg_integer()}
-        }
-
-  @doc """
-  Validates if the given text is a valid URL.
-  """
+  @impl true
   def is_valid?(url_text) when is_binary(url_text) do
+    url_text = ensure_scheme(url_text)
+
     case extract_domain(url_text) do
       {:ok, domain} ->
         case Domainatrex.parse(domain) do
@@ -25,13 +22,13 @@ defmodule TextParser.Tokens.URL do
   def is_valid?(_), do: false
 
   defp extract_domain(url) do
-    case URI.new(ensure_http_prefix(url)) do
+    case URI.new(url) do
       {:ok, %URI{host: host}} when not is_nil(host) -> {:ok, host}
       _ -> :error
     end
   end
 
-  defp ensure_http_prefix(uri) do
+  defp ensure_scheme(uri) do
     if String.starts_with?(uri, ["http://", "https://"]) do
       uri
     else

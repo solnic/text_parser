@@ -1,14 +1,10 @@
 defmodule TextParser.Text do
-  alias TextParser.Tokens.{URL, Tag, Mention}
-
-  defstruct value: "", urls: [], tags: [], mentions: []
-
   @type t :: %__MODULE__{
           value: String.t(),
-          urls: [URL.t()],
-          tags: [Tag.t()],
-          mentions: [Mention.t()]
+          tokens: [struct()]
         }
+
+  defstruct value: "", tokens: []
 
   @doc """
   Creates a new Text struct from the given text value.

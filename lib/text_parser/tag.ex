@@ -1,17 +1,14 @@
 defmodule TextParser.Tokens.Tag do
-  defstruct [:value, :position]
+  use TextParser.Token,
+    pattern: ~r/(?:^|\s)(#[^\d\s]\S*)/u,
+    trim_chars: [".", ",", "!", "?"]
 
-  @type t :: %__MODULE__{
-          value: String.t(),
-          position: {non_neg_integer(), non_neg_integer()}
-        }
+  @max_tag_length 66
 
-  @doc """
-  Validates if the given text is a valid tag.
-  """
+  @impl true
   def is_valid?(tag_text) when is_binary(tag_text) do
     case tag_text do
-      "#" <> rest ->
+      "#" <> rest when byte_size(tag_text) <= @max_tag_length ->
         rest != "" and
           String.match?(rest, ~r/^\S+$/) and
           String.match?(rest, ~r/[[:alpha:]]/)
