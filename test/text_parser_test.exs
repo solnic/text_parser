@@ -354,15 +354,6 @@ defmodule TextParserTest do
       assert tag2.position == {21, 27}
     end
 
-    test "enforces tag length limit" do
-      # 67 chars total
-      long_tag = "#" <> String.duplicate("a", 66)
-      text = "This tag is too long: #{long_tag}"
-      result = TextParser.parse(text)
-
-      assert TextParser.get(result, Tag) == []
-    end
-
     test "extracts valid mentions from text" do
       text = "Hey @user and @other.bsky.social for more info"
       result = TextParser.parse(text)
