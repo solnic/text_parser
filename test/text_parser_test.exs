@@ -1,6 +1,8 @@
 defmodule TextParserTest do
   use ExUnit.Case, async: true
 
+  doctest TextParser
+
   describe "parse/1" do
     test "extracts valid URLs from text" do
       text = "Check out https://example.com for more info"
@@ -314,6 +316,45 @@ defmodule TextParserTest do
       [mention] = result.mentions
       assert mention.value == "@solnic.dev"
       assert mention.position == {4, 15}
+    end
+  end
+
+  describe "parse/2" do
+    test "extracts only specified tokens" do
+      text = "Check out https://example.com #elixir @user"
+
+      # Extract only URLs
+      result = TextParser.parse(text, extract: [:urls])
+      assert length(result.urls) == 1
+      assert result.tags == []
+      assert result.mentions == []
+
+      # Extract only tags
+      result = TextParser.parse(text, extract: [:tags])
+      assert result.urls == []
+      assert length(result.tags) == 1
+      assert result.mentions == []
+
+      # Extract only mentions
+      result = TextParser.parse(text, extract: [:mentions])
+      assert result.urls == []
+      assert result.tags == []
+      assert length(result.mentions) == 1
+
+      # Extract tags and mentions
+      result = TextParser.parse(text, extract: [:tags, :mentions])
+      assert result.urls == []
+      assert length(result.tags) == 1
+      assert length(result.mentions) == 1
+    end
+
+    test "extracts all tokens when no options provided" do
+      text = "Check out https://example.com #elixir @user"
+      result = TextParser.parse(text, [])
+
+      assert length(result.urls) == 1
+      assert length(result.tags) == 1
+      assert length(result.mentions) == 1
     end
   end
 end
