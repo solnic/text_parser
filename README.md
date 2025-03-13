@@ -99,7 +99,8 @@ url.value     # => "https://elixir-lang.org"
 url.position  # => {6, 29} (start and end byte positions)
 ```
 
-The `position` tuple uses a range format where:
+:warning: The `position` tuple uses a range format where:
+
 - The start position is inclusive (the first byte of the token)
 - The end position is exclusive (one byte past the last byte of the token)
 
