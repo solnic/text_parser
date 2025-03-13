@@ -1,16 +1,12 @@
 defmodule TextParser.Tokens.URL do
-  defstruct [:value, :position]
-
-  @type t :: %__MODULE__{
-          value: String.t(),
-          position: {non_neg_integer(), non_neg_integer()}
-        }
+  use TextParser.Token
 
   @url_regex ~r/(?:^|\s)(?<!@)((?:https?:\/\/)?[^\s]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/ui
 
   @doc """
   Extracts URLs from the given text.
   """
+  @impl true
   def extract(text) when is_binary(text) do
     Regex.scan(@url_regex, text, return: :index)
     |> Enum.reduce([], fn [{match_start, _match_length}, {url_start, url_length}], acc ->

@@ -3,38 +3,54 @@ defmodule TextParser do
   alias TextParser.Tokens.{URL, Tag, Mention}
 
   @doc """
-  Parses the given text and returns a Text struct with extracted URLs, tags, and mentions.
-  """
-  @spec parse(String.t()) :: Text.t()
-  def parse(text) when is_binary(text) do
-    parse(text, [])
-  end
-
-  @doc """
-  Parses the given text and returns a Text struct with only the specified tokens extracted.
+  Parses the given text and returns a Text struct with extracted tokens.
 
   ## Options
 
-    * `:extract` - A list of token types to extract. Valid values are `:urls`, `:tags`, and `:mentions`.
-      When not provided or empty, all token types are extracted.
+    * `:extract` - A list of token extractor modules that implement the `TextParser.Token` behaviour.
 
   ## Examples
 
-      iex> TextParser.parse("Check out https://example.com #elixir", extract: [:urls])
+      # Extract URLs only
+      iex> TextParser.parse("Check out https://example.com", extract: [URL])
+      %TextParser.Text{
+        value: "Check out https://example.com",
+        tokens: [
+          %TextParser.Tokens.URL{
+            value: "https://example.com",
+            position: {10, 29}
+          }
+        ]
+      }
 
-      iex> TextParser.parse("Check out https://example.com #elixir", extract: [:tags, :urls])
+      # Extract URLs and tags
+      iex> TextParser.parse("Check out https://example.com #elixir", extract: [URL, Tag])
+      %TextParser.Text{
+        value: "Check out https://example.com #elixir",
+        tokens: [
+          %TextParser.Tokens.URL{
+            value: "https://example.com",
+            position: {10, 29}
+          },
+          %TextParser.Tokens.Tag{
+            value: "#elixir",
+            position: {30, 37}
+          }
+        ]
+      }
 
-      iex> TextParser.parse("Check out https://example.com by @janedoe", extract: [:mentions, :urls])
   """
   @spec parse(String.t(), keyword()) :: Text.t()
   def parse(text, opts) when is_binary(text) and is_list(opts) do
     text = :unicode.characters_to_binary(text)
-    tokens = Keyword.get(opts, :extract, [:urls, :tags, :mentions])
+    extractors = Keyword.get(opts, :extract, [])
 
-    urls = if :urls in tokens, do: URL.extract(text), else: []
-    tags = if :tags in tokens, do: Tag.extract(text), else: []
-    mentions = if :mentions in tokens, do: Mention.extract(text), else: []
+    tokens = Enum.flat_map(extractors, & &1.extract(text))
+    %{Text.new(text) | tokens: Enum.sort_by(tokens, & &1.position)}
+  end
 
-    %{Text.new(text) | urls: urls, tags: tags, mentions: mentions}
+  @spec parse(String.t()) :: Text.t()
+  def parse(text) do
+    parse(text, extract: [URL, Tag, Mention])
   end
 end

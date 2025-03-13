@@ -1,10 +1,5 @@
 defmodule TextParser.Tokens.Tag do
-  defstruct [:value, :position]
-
-  @type t :: %__MODULE__{
-          value: String.t(),
-          position: {non_neg_integer(), non_neg_integer()}
-        }
+  use TextParser.Token
 
   @tag_regex ~r/(?:^|\s)(#[^\d\s]\S*)/u
 
@@ -13,6 +8,7 @@ defmodule TextParser.Tokens.Tag do
   @doc """
   Extracts tags from the given text.
   """
+  @impl true
   def extract(text) when is_binary(text) do
     Regex.scan(@tag_regex, text, return: :index)
     |> Enum.reduce([], fn [{match_start, _match_length}, {tag_start, tag_length}], acc ->

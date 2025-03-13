@@ -1,16 +1,12 @@
 defmodule TextParser.Tokens.Mention do
-  defstruct [:value, :position]
-
-  @type t :: %__MODULE__{
-          value: String.t(),
-          position: {non_neg_integer(), non_neg_integer()}
-        }
+  use TextParser.Token
 
   @mention_regex ~r/(?:^|\s)(@\S*)/u
 
   @doc """
   Extracts mentions from the given text.
   """
+  @impl true
   def extract(text) when is_binary(text) do
     Regex.scan(@mention_regex, text, return: :index)
     |> Enum.reduce([], fn [{match_start, _match_length}, {mention_start, mention_length}],
