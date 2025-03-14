@@ -68,7 +68,8 @@ defmodule TextParser.MixProject do
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:doctor, "~> 0.21.0", only: :dev},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:domainatrex, "~> 3.0"}
+      {:domainatrex, "~> 3.0"},
+      {:nimble_parsec, "~> 1.4"}
     ]
   end
 end
